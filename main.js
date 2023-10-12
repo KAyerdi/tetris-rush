@@ -59,13 +59,65 @@ const piece = {
   ]
 }
 
+// 9. RANDOM PIECES
+
+const PIECES = [
+  [
+    [1, 1],
+    [1, 1]
+  ],
+  [
+    [1, 1, 1, 1]
+  ],
+  [
+    [0, 1, 0],
+    [1, 1, 1]
+  ],
+  [
+    [1, 1, 0],
+    [0, 1, 1]
+  ],
+  [
+    [1, 0],
+    [1, 0],
+    [1, 1],
+  ]
+]
+
 
 // 2. hacemos el game loop con 2 funciones, siempre en los juegos es clave el game loop
 
-function update (){
-  draw()
-  window.requestAnimationFrame(update)
+//function update (){
+// draw()
+//window.requestAnimationFrame(update)
+//}
+
+//8. auto drop
+
+let dropCounter = 0
+let lastTime = 0
+
+function update (time = 0){
+const deltaTime = time - lastTime
+lastTime = time
+
+dropCounter += deltaTime
+
+if (dropCounter > 1000) {
+  piece.position.y++
+  dropCounter = 0
 }
+
+if (checkCollision()){
+  piece.position.y--
+  solidifyPiece()
+  removeRows()
+}
+
+draw()
+window.requestAnimationFrame(update)
+}
+
 
 function draw () {
   context.fillStyle = '#000'
@@ -113,6 +165,25 @@ document.addEventListener('keydown', event => {
       removeRows()
     }
   }
+  
+  if (event.key === 'ArrowUp') {
+    const rotated = []
+
+    for (let i = 0; i < piece.shape.length[0].length; i++) {
+      const row = []
+
+      for (let j = piece.shape.length - 1; j > 0; j--) {
+        row.push(piece.shape[j][i])
+      }
+      rotated.push(row)
+    }
+    const previousShape = piece.shape
+    piece.shape = rotated
+    if (checkCollision()){
+      piece.shape = previousShape
+    }
+  }
+
 })
 
 function checkCollision(){
@@ -127,16 +198,29 @@ function checkCollision(){
 }
 
 function solidifyPiece(){
-  piece.shape.forEach((row, x) => {
-    row.forEach((value, y) => {
+  piece.shape.forEach((row, y) => {
+    row.forEach((value, x) => {
       if (value === 1) {
       board[y + piece.position.y][x + piece.position.x] = 1
       }
     })
   })
 
-  piece.position.x = 0
+  //reset position
+
+  piece.position.x = Math.floor(BOARD_WIDTH / 2 - 2)
   piece.position.y = 0
+  
+  // get random shape
+
+  piece.shape = PIECES[Math.floor(Math.random() * PIECES.length)]
+
+  // GAME OVER
+
+  if (checkCollision()) {
+    window.alert('PERDISTE WACHO, AL LOBBY..!')
+    board.forEach((row) => row.fill(0))
+  }
 }
 
 function removeRows() {
